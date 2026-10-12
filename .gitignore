@@ -1,0 +1,423 @@
+# =========================================================
+# OS / System files
+# =========================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.AppleDouble
+.LSOverride
+Icon?
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+*~
+.directory
+.fuse_hidden*
+
+# =========================================================
+# Editors / IDEs
+# =========================================================
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+*.code-workspace
+.history/
+
+# JetBrains (IntelliJ, WebStorm, PyCharm, GoLand, etc.)
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+.idea_modules/
+
+# Vim / Neovim
+*.swp
+*.swo
+*.swn
+.*.sw?
+.netrwhist
+Session.vim
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# Sublime
+*.sublime-project
+*.sublime-workspace
+
+# Eclipse / NetBeans
+.classpath
+.project
+.settings/
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# =========================================================
+# Secrets / environment
+# =========================================================
+.env
+.env.*
+!.env.example
+!.env.template
+!.env.sample
+*.env
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.jks
+secrets/
+.secrets/
+*.secret
+credentials.json
+service-account*.json
+
+# =========================================================
+# Logs / temp
+# =========================================================
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnpm-debug.log*
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej
+*.pid
+*.seed
+*.pid.lock
+
+# =========================================================
+# Node.js / JS / TS
+# =========================================================
+node_modules/
+jspm_packages/
+bower_components/
+.webpack/
+.rollup.cache/
+.parcel-cache/
+.parcel-cache/
+.next/
+.nuxt/
+.output/
+.vercel/
+.netlify/
+.svelte-kit/
+.astro/
+.vite/
+.docusaurus/
+.cache/
+.eslintcache
+.stylelintcache
+.node_repl_history
+.npm/
+.yarn/
+.pnp.*
+.yarn-integrity
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+coverage/
+.nyc_output/
+lib-cov/
+*.tsbuildinfo
+dist/
+build/
+out/
+.eslintcache
+node_modules/.cache
+
+# =========================================================
+# Python
+# =========================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.venv/
+venv/
+ENV/
+env/
+.python-version
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+.ruff_cache/
+.pytest_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+.hypothesis/
+.ipynb_checkpoints/
+profile_default/
+__pypackages__/
+Pipfile.lock
+poetry.lock
+.conda/
+
+# =========================================================
+# Go
+# =========================================================
+*.exe
+*.exe~
+*.dll
+*.dylib
+*.test
+*.out
+vendor/
+go.work
+go.work.sum
+.golangci.yml.bak
+
+# =========================================================
+# Rust
+# =========================================================
+/target/
+**/*.rs.bk
+*.pdb
+Cargo.lock   # uncomment for libraries; keep for binaries
+
+# =========================================================
+# Java / Kotlin / Gradle / Maven
+# =========================================================
+*.class
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+hs_err_pid*
+replay_pid*
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# =========================================================
+# Ruby / Rails
+# =========================================================
+*.gem
+*.rbc
+/.bundle/
+/.yardoc
+/_yardoc/
+/coverage/
+/doc/
+/pkg/
+/spec/reports/
+/tmp/
+/log/
+.env*
+.bundle/
+vendor/bundle
+.ruby-version
+.ruby-gemset
+
+# =========================================================
+# PHP / Laravel / Composer
+# =========================================================
+/vendor/
+composer.lock
+.phpunit.result.cache
+.phpunit.cache/
+.php-cs-fixer.cache
+storage/*.key
+Homestead.yaml
+Homestead.json
+.env.backup
+.phpactor.json
+
+# =========================================================
+# C / C++
+# =========================================================
+*.o
+*.obj
+*.lo
+*.la
+*.al
+*.libs
+*.so
+*.so.*
+*.dylib
+*.dll
+*.a
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+*.dSYM/
+*.su
+*.idb
+*.pdb
+*.mod*
+core
+vgcore.*
+
+# =========================================================
+# C# / .NET
+# =========================================================
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+*.cache
+*.csproj.user
+project.lock.json
+project.fragment.lock.json
+artifacts/
+.vs/
+
+# =========================================================
+# Swift / Xcode / iOS / macOS dev
+# =========================================================
+build/
+DerivedData/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+Pods/
+.swiftpm/
+Carthage/Build/
+
+# Android
+*.apk
+*.ap_
+*.aab
+*.dex
+local.properties
+.cxx/
+captures/
+.gradle/
+
+# =========================================================
+# Docker / containers
+# =========================================================
+.dockerignore
+docker-compose.override.yml
+*.pid
+
+# =========================================================
+# Terraform / IaC
+# =========================================================
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfvars
+*.tfvars.json
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# =========================================================
+# CI / coverage / reports
+# =========================================================
+coverage/
+.coverage
+*.lcov
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+junit.xml
+test-results/
+playwright-report/
+cypress/videos/
+cypress/screenshots/
+
+# =========================================================
+# Misc tools / caches
+# =========================================================
+.cache/
+.sass-cache/
+.gradle/
+.npm/
+.yarn/
+.pnpm-store/
+.pnpm-store/
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.DS_Store
+*.stackdump
+.eslintcache
+.stylelintcache
+.history/
+.turbo/
+.nx/
