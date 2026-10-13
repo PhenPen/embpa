@@ -53,6 +53,7 @@ app.get('/invoices', (req, res) => {
 app.post('/create-payment-intent', async (req, res) => {
   try {
     const { invoiceId, idempotencyKey } = req.body;
+
     const invoice = db
       .prepare('SELECT * FROM invoices WHERE id = ?')
       .get(invoiceId);
@@ -60,18 +61,20 @@ app.post('/create-payment-intent', async (req, res) => {
     if (!invoice) return res.status(404).send({ error: 'Invoice not found' });
     if (invoice.paid) return res.status(400).send({ error: 'Already paid' });
 
-    // TEMPORARY HACK FOR TERMUX TESTING (Remove this line when you get to a PC)
-    // db.prepare('UPDATE invoices SET paid = 1 WHERE id = ?').run(invoiceId);
+    // Build the options object for Stripe
+    const stripeOptions = {};
+    if (idempotencyKey) {
+      stripeOptions.idempotencyKey = idempotencyKey;
+    }
 
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: invoice.amount * 100,
-      currency: 'usd',
-      metadata: { invoiceId: String(invoice.id) },
-    },
-	{
-	idempotencyKey : idempotencyKey ; // Added idempotencyKey
-	}
-	);
+    const paymentIntent = await stripe.paymentIntents.create(
+      {
+        amount: invoice.amount * 100,
+        currency: 'usd',
+        metadata: { invoiceId: String(invoice.id) },
+      },
+      stripeOptions
+    );
 
     res.send({
       clientSecret: paymentIntent.client_secret,
