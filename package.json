@@ -15,7 +15,8 @@
     "dotenv": "^16.6.1",
     "express": "^4.22.3",
     "jsonwebtoken": "^9.0.3",
-    "stripe": "^15.12.0"
+    "stripe": "^15.12.0",
+    "validator": "^13.15.35"
   },
   "keywords": [],
   "author": "",
