@@ -39,11 +39,9 @@ app.post(
   }
 );
 
-// --- JSON PARSER FOR ALL OTHER ROUTES ---
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Send public config to the frontend
 app.get('/config', (req, res) => {
   if (!process.env.STRIPE_PUBLISHABLE_KEY) {
     return res.status(500).send({ error: 'STRIPE_PUBLISHABLE_KEY not set' });
@@ -51,13 +49,11 @@ app.get('/config', (req, res) => {
   res.json({ publishableKey: process.env.STRIPE_PUBLISHABLE_KEY });
 });
 
-// Get all invoices
 app.get('/invoices', (req, res) => {
   const invoices = db.prepare('SELECT * FROM invoices').all();
   res.json(invoices);
 });
 
-// Create a new invoice
 app.post('/invoices', (req, res) => {
   try {
     const { customer, amount } = req.body;
@@ -85,18 +81,45 @@ app.post('/invoices', (req, res) => {
   }
 });
 
-// Create a payment intent for an invoice
 app.post('/create-payment-intent', async (req, res) => {
   try {
     const { invoiceId, idempotencyKey } = req.body;
 
-    const invoice = db
-      .prepare('SELECT * FROM invoices WHERE id = ?')
-      .get(invoiceId);
+    // --- STEP 1: Check-and-reserve inside a transaction ---
+    const checkAndReserve = db.transaction((id) => {
+      const invoice = db
+        .prepare('SELECT * FROM invoices WHERE id = ?')
+        .get(id);
 
-    if (!invoice) return res.status(404).send({ error: 'Invoice not found' });
-    if (invoice.paid) return res.status(400).send({ error: 'Already paid' });
+      if (!invoice) throw new Error('Invoice not found');
+      if (invoice.paid) throw new Error('Already paid');
 
+      if (invoice.payment_intent_id && invoice.payment_intent_id !== 'PENDING') {
+        return { invoice, existingIntentId: invoice.payment_intent_id };
+      }
+
+      if (invoice.payment_intent_id === 'PENDING') {
+        throw new Error('Payment already in progress. Please wait.');
+      }
+
+      db.prepare('UPDATE invoices SET payment_intent_id = ? WHERE id = ?')
+        .run('PENDING', id);
+
+      return { invoice, existingIntentId: null };
+    });
+
+    const { invoice, existingIntentId } = checkAndReserve(invoiceId);
+
+    // --- STEP 2: If a PaymentIntent already exists, retrieve it ---
+    if (existingIntentId) {
+      const existingIntent = await stripe.paymentIntents.retrieve(existingIntentId);
+      return res.send({
+        clientSecret: existingIntent.client_secret,
+        invoice,
+      });
+    }
+
+    // --- STEP 3: Create a new PaymentIntent (async, outside the transaction) ---
     const stripeOptions = {};
     if (idempotencyKey) {
       stripeOptions.idempotencyKey = idempotencyKey;
@@ -111,13 +134,29 @@ app.post('/create-payment-intent', async (req, res) => {
       stripeOptions
     );
 
+    // --- STEP 4: Save the real PaymentIntent ID ---
+    db.prepare('UPDATE invoices SET payment_intent_id = ? WHERE id = ?')
+      .run(paymentIntent.id, invoice.id);
+
     res.send({
       clientSecret: paymentIntent.client_secret,
       invoice,
     });
   } catch (err) {
     console.error(err);
-    res.status(500).send({ error: err.message });
+
+    // Release the reservation if we failed
+    if (req.body.invoiceId) {
+      try {
+        db.prepare(
+          "UPDATE invoices SET payment_intent_id = NULL WHERE id = ? AND payment_intent_id = 'PENDING'"
+        ).run(req.body.invoiceId);
+      } catch (cleanupErr) {
+        console.error('Failed to release reservation:', cleanupErr.message);
+      }
+    }
+
+    res.status(400).send({ error: err.message });
   }
 });
 

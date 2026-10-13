@@ -1,7 +1,6 @@
 const Database = require('better-sqlite3');
 const db = new Database('invoices.db');
 
-// Create the table if it doesn't exist yet
 db.exec(`
   CREATE TABLE IF NOT EXISTS invoices (
     id INTEGER PRIMARY KEY,
@@ -11,7 +10,14 @@ db.exec(`
   )
 `);
 
-// Seed with sample data ONLY if the table is empty
+// Migration: add payment_intent_id column if it doesn't exist
+const columns = db.prepare('PRAGMA table_info(invoices)').all();
+const hasColumn = columns.some((col) => col.name === 'payment_intent_id');
+if (!hasColumn) {
+  db.exec('ALTER TABLE invoices ADD COLUMN payment_intent_id TEXT');
+  console.log('Migration: added payment_intent_id column.');
+}
+
 const count = db.prepare('SELECT COUNT(*) as count FROM invoices').get();
 if (count.count === 0) {
   const seed = db.prepare(
