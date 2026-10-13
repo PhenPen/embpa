@@ -43,13 +43,7 @@ app.post(
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Get all invoices
-app.get('/invoices', (req, res) => {
-  const invoices = db.prepare('SELECT * FROM invoices').all();
-  res.json(invoices);
-});
-
-// Send config to the frontend
+// Send public config to the frontend
 app.get('/config', (req, res) => {
   if (!process.env.STRIPE_PUBLISHABLE_KEY) {
     return res.status(500).send({ error: 'STRIPE_PUBLISHABLE_KEY not set' });
@@ -57,6 +51,39 @@ app.get('/config', (req, res) => {
   res.json({ publishableKey: process.env.STRIPE_PUBLISHABLE_KEY });
 });
 
+// Get all invoices
+app.get('/invoices', (req, res) => {
+  const invoices = db.prepare('SELECT * FROM invoices').all();
+  res.json(invoices);
+});
+
+// Create a new invoice
+app.post('/invoices', (req, res) => {
+  try {
+    const { customer, amount } = req.body;
+
+    if (!customer || !amount) {
+      return res.status(400).send({ error: 'Customer and amount are required' });
+    }
+
+    if (typeof amount !== 'number' || amount <= 0) {
+      return res.status(400).send({ error: 'Amount must be a positive number' });
+    }
+
+    const result = db
+      .prepare('INSERT INTO invoices (customer, amount, paid) VALUES (?, ?, 0)')
+      .run(customer, amount);
+
+    const newInvoice = db
+      .prepare('SELECT * FROM invoices WHERE id = ?')
+      .get(result.lastInsertRowid);
+
+    res.status(201).json(newInvoice);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ error: err.message });
+  }
+});
 
 // Create a payment intent for an invoice
 app.post('/create-payment-intent', async (req, res) => {
@@ -70,7 +97,6 @@ app.post('/create-payment-intent', async (req, res) => {
     if (!invoice) return res.status(404).send({ error: 'Invoice not found' });
     if (invoice.paid) return res.status(400).send({ error: 'Already paid' });
 
-    // Build the options object for Stripe
     const stripeOptions = {};
     if (idempotencyKey) {
       stripeOptions.idempotencyKey = idempotencyKey;

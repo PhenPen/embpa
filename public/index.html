@@ -5,7 +5,8 @@
   <script src="https://js.stripe.com/v3/"></script>
   <style>
     body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 0 16px; }
-    h1 { margin-bottom: 24px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    h1 { margin: 0; }
     .invoice { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; align-items: center; }
     button { padding: 8px 16px; cursor: pointer; background: #635bff; color: white; border: none; border-radius: 4px; font-size: 14px; }
     button:hover { background: #544bc7; }
@@ -13,13 +14,19 @@
     .paid { color: green; font-weight: bold; }
     .loading { color: #888; }
 
-    .stripe-input { border: 1px solid #ccc; padding: 10px; border-radius: 4px; margin-bottom: 12px; background: white; }
+    .stripe-input { border: 1px solid #ccc; padding: 10px; border-radius: 4px; margin-bottom: 12px; background: white; width: 100%; box-sizing: border-box; font-size: 14px; }
     .stripe-input.StripeElement--focus { border-color: #635bff; }
     .stripe-input.StripeElement--invalid { border-color: red; }
+
+    label { font-size: 12px; color: #555; display: block; margin-bottom: 4px; }
   </style>
 </head>
 <body>
-  <h1>Invoices</h1>
+  <div class="header">
+    <h1>Invoices</h1>
+    <button id="add-invoice-btn">+ Add Invoice</button>
+  </div>
+
   <div id="invoices" class="loading">Loading...</div>
 
   <!-- Payment Modal -->
@@ -29,21 +36,21 @@
       <div id="payment-form">
         <h2 style="margin-top:0;">Enter Card Details</h2>
 
-        <label style="font-size: 12px; color: #555;">Card Number</label>
+        <label>Card Number</label>
         <div id="card-number" class="stripe-input"></div>
 
         <div style="display: flex; gap: 8px;">
           <div style="flex: 1;">
-            <label style="font-size: 12px; color: #555;">Expiry</label>
+            <label>Expiry</label>
             <div id="card-expiry" class="stripe-input"></div>
           </div>
           <div style="flex: 1;">
-            <label style="font-size: 12px; color: #555;">CVC</label>
+            <label>CVC</label>
             <div id="card-cvc" class="stripe-input"></div>
           </div>
         </div>
 
-        <label style="font-size: 12px; color: #555;">ZIP Code</label>
+        <label>ZIP Code</label>
         <div id="postal-code" class="stripe-input"></div>
 
         <div id="card-errors" style="color: red; font-size: 14px; margin-bottom: 16px;"></div>
@@ -61,6 +68,24 @@
     </div>
   </div>
 
+  <!-- Create Invoice Modal -->
+  <div id="create-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center;">
+    <div style="background: white; padding: 24px; border-radius: 8px; width: 400px; max-width: 90%;">
+      <h2 style="margin-top:0;">New Invoice</h2>
+
+      <label>Customer Name</label>
+      <input id="new-customer" class="stripe-input" type="text" placeholder="e.g. Acme Supplies" />
+
+      <label>Amount (USD)</label>
+      <input id="new-amount" class="stripe-input" type="number" inputmode="decimal" placeholder="e.g. 500" min="1" />
+
+      <div id="create-error" style="color: red; font-size: 14px; margin-bottom: 16px;"></div>
+
+      <button id="submit-invoice" style="width: 100%;">Create Invoice</button>
+      <button id="cancel-invoice" style="background: #eee; color: #333; width: 100%; margin-top: 8px;">Cancel</button>
+    </div>
+  </div>
+
   <script>
     let stripe;
     let cardNumber, cardExpiry, cardCvc, postalCode;
@@ -68,7 +93,7 @@
     let currentInvoiceId = null;
     let currentIdempotencyKey = null;
 
-    // 1. Initialize Stripe by fetching the key from the backend
+    // --- Stripe setup ---
     async function initStripe() {
       const res = await fetch('/config');
       const { publishableKey } = await res.json();
@@ -87,13 +112,19 @@
       postalCode.mount('#postal-code');
     }
 
-    // 2. Load the invoices
+    // --- Invoices list ---
     async function loadInvoices() {
       const res = await fetch('/invoices');
       const invoices = await res.json();
       const container = document.getElementById('invoices');
       container.classList.remove('loading');
       container.innerHTML = '';
+
+      if (invoices.length === 0) {
+        container.textContent = 'No invoices yet. Click "+ Add Invoice" to create one.';
+        container.style.color = '#888';
+        return;
+      }
 
       invoices.forEach((inv) => {
         const div = document.createElement('div');
@@ -118,7 +149,7 @@
       });
     }
 
-    // 3. Open the modal and handle the idempotency key
+    // --- Payment modal ---
     function openPaymentModal(invoiceId) {
       currentInvoiceId = invoiceId;
 
@@ -147,7 +178,6 @@
       document.getElementById('payment-modal').style.display = 'none';
     }
 
-    // 4. Handle the payment submission
     async function handlePayment() {
       const submitBtn = document.getElementById('submit-payment');
       submitBtn.disabled = true;
@@ -193,11 +223,60 @@
       }
     }
 
-    // 5. Attach event listeners
+    // --- Create invoice modal ---
+    function openCreateModal() {
+      document.getElementById('new-customer').value = '';
+      document.getElementById('new-amount').value = '';
+      document.getElementById('create-error').textContent = '';
+      document.getElementById('create-modal').style.display = 'flex';
+    }
+
+    function closeCreateModal() {
+      document.getElementById('create-modal').style.display = 'none';
+    }
+
+    async function handleCreateInvoice() {
+      const customer = document.getElementById('new-customer').value.trim();
+      const amountRaw = document.getElementById('new-amount').value;
+      const amount = parseInt(amountRaw, 10);
+      const errorDiv = document.getElementById('create-error');
+      errorDiv.textContent = '';
+
+      if (!customer) {
+        errorDiv.textContent = 'Customer name is required';
+        return;
+      }
+      if (!amountRaw || isNaN(amount) || amount <= 0) {
+        errorDiv.textContent = 'Amount must be a positive number';
+        return;
+      }
+
+      try {
+        const res = await fetch('/invoices', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ customer, amount }),
+        });
+
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        closeCreateModal();
+        loadInvoices();
+      } catch (err) {
+        errorDiv.textContent = err.message;
+      }
+    }
+
+    // --- Event listeners ---
+    document.getElementById('add-invoice-btn').onclick = openCreateModal;
+    document.getElementById('submit-invoice').onclick = handleCreateInvoice;
+    document.getElementById('cancel-invoice').onclick = closeCreateModal;
+
     document.getElementById('submit-payment').onclick = handlePayment;
     document.getElementById('cancel-payment').onclick = closePaymentModal;
 
-    // 6. Bootstrap the app: Initialize Stripe, then load invoices
+    // --- Bootstrap ---
     (async () => {
       await initStripe();
       await loadInvoices();
