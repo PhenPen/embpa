@@ -8,7 +8,6 @@ const { requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
-// --- Helpers ---
 function signToken(userId) {
   return jwt.sign({ userId }, config.jwtSecret, {
     expiresIn: config.jwtExpiry,
@@ -24,7 +23,6 @@ function setAuthCookie(res, token) {
   });
 }
 
-// --- Routes ---
 router.post('/register', async (req, res) => {
   try {
     const { email, password } = req.body;

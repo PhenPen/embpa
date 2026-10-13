@@ -1,10 +1,15 @@
 const express = require('express');
 const db = require('../db');
+const { requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
+router.use(requireAuth);
+
 router.get('/', (req, res) => {
-  const invoices = db.prepare('SELECT * FROM invoices').all();
+  const invoices = db
+    .prepare('SELECT * FROM invoices WHERE user_id = ?')
+    .all(req.user.id);
   res.json(invoices);
 });
 
@@ -21,8 +26,10 @@ router.post('/', (req, res) => {
     }
 
     const result = db
-      .prepare('INSERT INTO invoices (customer, amount, paid) VALUES (?, ?, 0)')
-      .run(customer, amount);
+      .prepare(
+        'INSERT INTO invoices (customer, amount, paid, user_id) VALUES (?, ?, 0, ?)'
+      )
+      .run(customer, amount, req.user.id);
 
     const newInvoice = db
       .prepare('SELECT * FROM invoices WHERE id = ?')

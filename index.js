@@ -21,7 +21,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // --- ROUTES ---
 app.use('/auth', authRouter);
 app.use('/invoices', invoicesRouter);
-app.use('/', paymentsRouter); // exposes /create-payment-intent
+app.use('/', paymentsRouter);
 
 app.get('/config', (req, res) => {
   if (!config.stripePublishableKey) {

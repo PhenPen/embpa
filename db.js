@@ -34,16 +34,13 @@ if (!invoiceCols.some((c) => c.name === 'user_id')) {
   console.log('Migration: added user_id column.');
 }
 
-// --- Seed sample invoices (only if table is empty) ---
-const count = db.prepare('SELECT COUNT(*) as count FROM invoices').get();
-if (count.count === 0) {
-  const seed = db.prepare(
-    'INSERT INTO invoices (customer, amount, paid) VALUES (?, ?, ?)'
-  );
-  seed.run('Acme Supplies', 2000, 0);
-  seed.run('BuildCo', 1500, 0);
-  seed.run('Steel Works', 3200, 0);
-  console.log('Seeded database with sample invoices.');
+// --- Migration: remove orphan invoices from the pre-auth era ---
+const orphans = db
+  .prepare('SELECT COUNT(*) as c FROM invoices WHERE user_id IS NULL')
+  .get();
+if (orphans.c > 0) {
+  db.prepare('DELETE FROM invoices WHERE user_id IS NULL').run();
+  console.log(`Migration: removed ${orphans.c} orphan invoice(s).`);
 }
 
 console.log('Database ready.');

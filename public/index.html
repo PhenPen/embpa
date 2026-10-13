@@ -19,6 +19,28 @@
     .stripe-input.StripeElement--invalid { border-color: red; }
 
     label { font-size: 12px; color: #555; display: block; margin-bottom: 4px; }
+
+    .invoice.sample { opacity: 0.5; }
+    .invoice.sample button { pointer-events: none; }
+    .badge {
+      display: inline-block;
+      background: #f0f0f0;
+      color: #666;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 6px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+      vertical-align: middle;
+    }
+    .sample-hint {
+      font-size: 13px;
+      color: #888;
+      text-align: center;
+      margin-top: 16px;
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
@@ -93,7 +115,6 @@
     let currentInvoiceId = null;
     let currentIdempotencyKey = null;
 
-    // --- Stripe setup ---
     async function initStripe() {
       const res = await fetch('/config');
       const { publishableKey } = await res.json();
@@ -112,7 +133,6 @@
       postalCode.mount('#postal-code');
     }
 
-    // --- Invoices list ---
     async function loadInvoices() {
       const res = await fetch('/invoices');
       const invoices = await res.json();
@@ -121,8 +141,7 @@
       container.innerHTML = '';
 
       if (invoices.length === 0) {
-        container.textContent = 'No invoices yet. Click "+ Add Invoice" to create one.';
-        container.style.color = '#888';
+        renderSampleInvoice(container);
         return;
       }
 
@@ -149,7 +168,27 @@
       });
     }
 
-    // --- Payment modal ---
+    function renderSampleInvoice(container) {
+      const div = document.createElement('div');
+      div.className = 'invoice sample';
+
+      const label = document.createElement('span');
+      label.innerHTML = 'Sample Supplies Co. — $1,500.00 <span class="badge">SAMPLE</span>';
+      div.appendChild(label);
+
+      const btn = document.createElement('button');
+      btn.textContent = 'Pay';
+      btn.disabled = true;
+      div.appendChild(btn);
+
+      container.appendChild(div);
+
+      const hint = document.createElement('p');
+      hint.className = 'sample-hint';
+      hint.textContent = 'This is what an invoice looks like. Click "+ Add Invoice" to create your own.';
+      container.appendChild(hint);
+    }
+
     function openPaymentModal(invoiceId) {
       currentInvoiceId = invoiceId;
 
@@ -223,7 +262,6 @@
       }
     }
 
-    // --- Create invoice modal ---
     function openCreateModal() {
       document.getElementById('new-customer').value = '';
       document.getElementById('new-amount').value = '';
@@ -268,7 +306,6 @@
       }
     }
 
-    // --- Event listeners ---
     document.getElementById('add-invoice-btn').onclick = openCreateModal;
     document.getElementById('submit-invoice').onclick = handleCreateInvoice;
     document.getElementById('cancel-invoice').onclick = closeCreateModal;
@@ -276,7 +313,6 @@
     document.getElementById('submit-payment').onclick = handlePayment;
     document.getElementById('cancel-payment').onclick = closePaymentModal;
 
-    // --- Bootstrap ---
     (async () => {
       await initStripe();
       await loadInvoices();

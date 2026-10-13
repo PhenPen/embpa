@@ -2,18 +2,20 @@ const express = require('express');
 const Stripe = require('stripe');
 const config = require('../config');
 const db = require('../db');
+const { requireAuth } = require('../middleware/auth');
 
 const stripe = Stripe(config.stripeSecretKey);
 const router = express.Router();
 
-router.post('/create-payment-intent', async (req, res) => {
+router.post('/create-payment-intent', requireAuth, async (req, res) => {
   try {
     const { invoiceId, idempotencyKey } = req.body;
 
-    const checkAndReserve = db.transaction((id) => {
+    const checkAndReserve = db.transaction((id, userId) => {
       const invoice = db.prepare('SELECT * FROM invoices WHERE id = ?').get(id);
 
       if (!invoice) throw new Error('Invoice not found');
+      if (invoice.user_id !== userId) throw new Error('Invoice not found');
       if (invoice.paid) throw new Error('Already paid');
 
       if (invoice.payment_intent_id && invoice.payment_intent_id !== 'PENDING') {
@@ -30,7 +32,10 @@ router.post('/create-payment-intent', async (req, res) => {
       return { invoice, existingIntentId: null };
     });
 
-    const { invoice, existingIntentId } = checkAndReserve(invoiceId);
+    const { invoice, existingIntentId } = checkAndReserve(
+      invoiceId,
+      req.user.id
+    );
 
     if (existingIntentId) {
       const existingIntent = await stripe.paymentIntents.retrieve(existingIntentId);
