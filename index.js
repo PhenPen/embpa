@@ -49,6 +49,15 @@ app.get('/invoices', (req, res) => {
   res.json(invoices);
 });
 
+// Send config to the frontend
+app.get('/config', (req, res) => {
+  if (!process.env.STRIPE_PUBLISHABLE_KEY) {
+    return res.status(500).send({ error: 'STRIPE_PUBLISHABLE_KEY not set' });
+  }
+  res.json({ publishableKey: process.env.STRIPE_PUBLISHABLE_KEY });
+});
+
+
 // Create a payment intent for an invoice
 app.post('/create-payment-intent', async (req, res) => {
   try {

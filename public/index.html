@@ -62,22 +62,32 @@
   </div>
 
   <script>
-    const stripe = Stripe('pk_test_your_publishable_key_here');
-    const elements = stripe.elements();
-
-    const cardNumber = elements.create('cardNumber');
-    const cardExpiry = elements.create('cardExpiry');
-    const cardCvc = elements.create('cardCvc');
-    const postalCode = elements.create('postalCode');
-
-    cardNumber.mount('#card-number');
-    cardExpiry.mount('#card-expiry');
-    cardCvc.mount('#card-cvc');
-    postalCode.mount('#postal-code');
+    let stripe;
+    let cardNumber, cardExpiry, cardCvc, postalCode;
 
     let currentInvoiceId = null;
     let currentIdempotencyKey = null;
 
+    // 1. Initialize Stripe by fetching the key from the backend
+    async function initStripe() {
+      const res = await fetch('/config');
+      const { publishableKey } = await res.json();
+
+      stripe = Stripe(publishableKey);
+      const elements = stripe.elements();
+
+      cardNumber = elements.create('cardNumber');
+      cardExpiry = elements.create('cardExpiry');
+      cardCvc = elements.create('cardCvc');
+      postalCode = elements.create('postalCode');
+
+      cardNumber.mount('#card-number');
+      cardExpiry.mount('#card-expiry');
+      cardCvc.mount('#card-cvc');
+      postalCode.mount('#postal-code');
+    }
+
+    // 2. Load the invoices
     async function loadInvoices() {
       const res = await fetch('/invoices');
       const invoices = await res.json();
@@ -108,10 +118,10 @@
       });
     }
 
+    // 3. Open the modal and handle the idempotency key
     function openPaymentModal(invoiceId) {
       currentInvoiceId = invoiceId;
 
-      // Persistent idempotency key per invoice, survives page refresh
       const storageKey = `idempotency_key_${invoiceId}`;
       let storedKey = sessionStorage.getItem(storageKey);
 
@@ -137,6 +147,7 @@
       document.getElementById('payment-modal').style.display = 'none';
     }
 
+    // 4. Handle the payment submission
     async function handlePayment() {
       const submitBtn = document.getElementById('submit-payment');
       submitBtn.disabled = true;
@@ -164,7 +175,6 @@
 
         if (stripeError) throw new Error(stripeError.message);
 
-        // Payment succeeded. Clear the idempotency key for this invoice.
         sessionStorage.removeItem(`idempotency_key_${currentInvoiceId}`);
 
         document.getElementById('payment-form').style.display = 'none';
@@ -183,10 +193,15 @@
       }
     }
 
+    // 5. Attach event listeners
     document.getElementById('submit-payment').onclick = handlePayment;
     document.getElementById('cancel-payment').onclick = closePaymentModal;
 
-    loadInvoices();
+    // 6. Bootstrap the app: Initialize Stripe, then load invoices
+    (async () => {
+      await initStripe();
+      await loadInvoices();
+    })();
   </script>
 </body>
 </html>

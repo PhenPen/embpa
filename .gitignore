@@ -19,6 +19,7 @@ $RECYCLE.BIN/
 *~
 .directory
 .fuse_hidden*
+*.db
 
 # =========================================================
 # Editors / IDEs
