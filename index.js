@@ -52,7 +52,7 @@ app.get('/invoices', (req, res) => {
 // Create a payment intent for an invoice
 app.post('/create-payment-intent', async (req, res) => {
   try {
-    const { invoiceId } = req.body;
+    const { invoiceId, idempotencyKey } = req.body;
     const invoice = db
       .prepare('SELECT * FROM invoices WHERE id = ?')
       .get(invoiceId);
@@ -67,7 +67,11 @@ app.post('/create-payment-intent', async (req, res) => {
       amount: invoice.amount * 100,
       currency: 'usd',
       metadata: { invoiceId: String(invoice.id) },
-    });
+    },
+	{
+	idempotencyKey : idempotencyKey ; // Added idempotencyKey
+	}
+	);
 
     res.send({
       clientSecret: paymentIntent.client_secret,

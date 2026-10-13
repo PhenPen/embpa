@@ -136,10 +136,12 @@
       submitBtn.textContent = 'Processing...';
 
       try {
+	// generate a unique key for this payment
+	const idempotencyKey = crypto.randomUUID();
         const res = await fetch('/create-payment-intent', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ invoiceId: currentInvoiceId }),
+          body: JSON.stringify({ invoiceId: currentInvoiceId, idempotencyKey : idempotencyKey }),
         });
 
         const { clientSecret, error } = await res.json();
