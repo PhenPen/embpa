@@ -3,16 +3,10 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const Stripe = require('stripe');
 const path = require('path');
+const db = require('./db');
 
 const app = express();
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
-
-// Fake invoice data (in-memory; resets on restart)
-const invoices = [
-  { id: 1, customer: 'Acme Supplies', amount: 2000, paid: false },
-  { id: 2, customer: 'BuildCo', amount: 1500, paid: false },
-  { id: 3, customer: 'Steel Works', amount: 3200, paid: false },
-];
 
 // --- WEBHOOK ROUTE (must come BEFORE express.json) ---
 app.post(
@@ -37,11 +31,8 @@ app.post(
       const paymentIntent = event.data.object;
       const invoiceId = parseInt(paymentIntent.metadata.invoiceId, 10);
 
-      const invoice = invoices.find((i) => i.id === invoiceId);
-      if (invoice) {
-        invoice.paid = true;
-        console.log(`Invoice ${invoiceId} marked paid via webhook`);
-      }
+      db.prepare('UPDATE invoices SET paid = 1 WHERE id = ?').run(invoiceId);
+      console.log(`Invoice ${invoiceId} marked paid via webhook`);
     }
 
     res.json({ received: true });
@@ -54,6 +45,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Get all invoices
 app.get('/invoices', (req, res) => {
+  const invoices = db.prepare('SELECT * FROM invoices').all();
   res.json(invoices);
 });
 
@@ -61,16 +53,18 @@ app.get('/invoices', (req, res) => {
 app.post('/create-payment-intent', async (req, res) => {
   try {
     const { invoiceId } = req.body;
-    const invoice = invoices.find((i) => i.id === invoiceId);
+    const invoice = db
+      .prepare('SELECT * FROM invoices WHERE id = ?')
+      .get(invoiceId);
 
     if (!invoice) return res.status(404).send({ error: 'Invoice not found' });
     if (invoice.paid) return res.status(400).send({ error: 'Already paid' });
 
     // TEMPORARY HACK FOR TERMUX TESTING (Remove this line when you get to a PC)
-    // invoice.paid = true; 
+    // db.prepare('UPDATE invoices SET paid = 1 WHERE id = ?').run(invoiceId);
 
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: invoice.amount * 100, // Stripe uses cents
+      amount: invoice.amount * 100,
       currency: 'usd',
       metadata: { invoiceId: String(invoice.id) },
     });
