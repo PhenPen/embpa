@@ -16,6 +16,10 @@
       ? "Don't have an account?"
       : 'Already have an account?';
     document.getElementById('auth-switch-link').textContent = isLogin ? 'Sign up' : 'Log in';
+
+// NEW: clear the password when switching modes. Keep the email.
+  document.getElementById('auth-password').value = '';
+
     document.getElementById('auth-error').textContent = '';
   }
 
