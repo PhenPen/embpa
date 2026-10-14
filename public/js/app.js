@@ -273,6 +273,9 @@
 
   // --- Start app (called after successful auth) ---
   async function start(user) {
+    // FIX: hide the auth screen — was missing after the file split
+    document.getElementById('auth-screen').style.display = 'none';
+
     document.getElementById('app-screen').style.display = 'block';
     document.getElementById('user-email').textContent = user.email;
 

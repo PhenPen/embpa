@@ -1,27 +1,12 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const validator = require('validator');
 const config = require('../config');
 const db = require('../db');
 const { requireAuth } = require('../middleware/auth');
+const { signToken, setAuthCookie } = require('../auth-helpers');
 
 const router = express.Router();
-
-function signToken(userId) {
-  return jwt.sign({ userId }, config.jwtSecret, {
-    expiresIn: config.jwtExpiry,
-  });
-}
-
-function setAuthCookie(res, token) {
-  res.cookie(config.cookieName, token, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: config.cookieSecure,
-    maxAge: config.cookieMaxAgeMs,
-  });
-}
 
 router.post('/register', async (req, res) => {
   try {
