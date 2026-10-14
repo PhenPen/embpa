@@ -158,3 +158,30 @@ label {
   width: 400px;
   max-width: 90%;
 }
+
+/* --- Invoice actions --- */
+.invoice-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-icon {
+  background: #f0f0f0;
+  color: #888;
+  padding: 4px 10px;
+  font-size: 16px;
+  line-height: 1;
+  border-radius: 4px;
+}
+.btn-icon:hover { background: #e0e0e0; color: #333; }
+
+.btn-danger {
+  background: #e74c3c;
+  color: white;
+}
+.btn-danger:hover { background: #c0392b; }
+
+.invoice.confirming {
+  background: #fff8f8;
+}

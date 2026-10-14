@@ -22,6 +22,12 @@
   function showAuthScreen() {
     document.getElementById('auth-screen').style.display = 'block';
     document.getElementById('app-screen').style.display = 'none';
+
+    // Close any modals that might be open
+    document.querySelectorAll('.modal-overlay.open').forEach((m) => {
+      m.classList.remove('open');
+    });
+
     setAuthMode('login');
   }
 
@@ -54,6 +60,9 @@
     submitBtn.textContent = authMode === 'login' ? 'Logging in...' : 'Signing up...';
 
     try {
+      // Note: using plain fetch here, not apiFetch, because a 401 from
+      // /auth/login just means "wrong credentials" and we want to show
+      // it inline, not redirect.
       const res = await fetch(`/auth/${authMode}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

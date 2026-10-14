@@ -42,4 +42,40 @@ router.post('/', (req, res) => {
   }
 });
 
+router.delete('/:id', (req, res) => {
+  try {
+    const invoiceId = parseInt(req.params.id, 10);
+
+    if (isNaN(invoiceId)) {
+      return res.status(400).send({ error: 'Invalid invoice id' });
+    }
+
+    const invoice = db
+      .prepare('SELECT * FROM invoices WHERE id = ?')
+      .get(invoiceId);
+
+    // Same "not found" message for nonexistent OR other users' invoices
+    if (!invoice || invoice.user_id !== req.user.id) {
+      return res.status(404).send({ error: 'Invoice not found' });
+    }
+
+    if (invoice.paid) {
+      return res.status(400).send({ error: 'Cannot delete a paid invoice' });
+    }
+
+    if (invoice.payment_intent_id) {
+      return res
+        .status(400)
+        .send({ error: 'Cannot delete an invoice with a payment in progress' });
+    }
+
+    db.prepare('DELETE FROM invoices WHERE id = ?').run(invoiceId);
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ error: err.message });
+  }
+});
+
 module.exports = router;

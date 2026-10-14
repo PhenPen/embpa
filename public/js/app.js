@@ -1,4 +1,4 @@
-// Main app: Stripe setup, invoices list, payment modal, create modal.
+// Main app: Stripe setup, invoices list, payment modal, create modal, delete.
 
 (function () {
   let stripe;
@@ -12,7 +12,7 @@
   async function initStripe() {
     if (stripeInitialized) return;
 
-    const res = await fetch('/config');
+    const res = await apiFetch('/config');
     const { publishableKey } = await res.json();
 
     stripe = Stripe(publishableKey);
@@ -33,12 +33,7 @@
 
   // --- Invoices ---
   async function loadInvoices() {
-    const res = await fetch('/invoices');
-
-    if (res.status === 401) {
-      window.Auth.showAuthScreen();
-      return;
-    }
+    const res = await apiFetch('/invoices');
 
     const invoices = await res.json();
     const container = document.getElementById('invoices');
@@ -51,26 +46,43 @@
     }
 
     invoices.forEach((inv) => {
-      const div = document.createElement('div');
-      div.className = 'invoice';
-
-      const label = document.createElement('span');
-      label.textContent = `${inv.customer} — $${(inv.amount / 1).toFixed(2)}`;
-      div.appendChild(label);
-
-      if (inv.paid) {
-        const paid = document.createElement('span');
-        paid.className = 'paid';
-        paid.textContent = 'Paid';
-        div.appendChild(paid);
-      } else {
-        const btn = document.createElement('button');
-        btn.textContent = 'Pay';
-        btn.onclick = () => openPaymentModal(inv.id);
-        div.appendChild(btn);
-      }
-      container.appendChild(div);
+      container.appendChild(renderInvoiceRow(inv));
     });
+  }
+
+  function renderInvoiceRow(inv) {
+    const div = document.createElement('div');
+    div.className = 'invoice';
+
+    const label = document.createElement('span');
+    label.textContent = `${inv.customer} — $${(inv.amount / 1).toFixed(2)}`;
+    div.appendChild(label);
+
+    if (inv.paid) {
+      const paid = document.createElement('span');
+      paid.className = 'paid';
+      paid.textContent = 'Paid';
+      div.appendChild(paid);
+    } else {
+      const actions = document.createElement('div');
+      actions.className = 'invoice-actions';
+
+      const payBtn = document.createElement('button');
+      payBtn.textContent = 'Pay';
+      payBtn.onclick = () => openPaymentModal(inv.id);
+      actions.appendChild(payBtn);
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'btn-icon';
+      delBtn.textContent = '×';
+      delBtn.title = 'Delete invoice';
+      delBtn.onclick = () => showDeleteConfirm(div, inv);
+      actions.appendChild(delBtn);
+
+      div.appendChild(actions);
+    }
+
+    return div;
   }
 
   function renderSampleInvoice(container) {
@@ -92,6 +104,52 @@
     hint.className = 'sample-hint';
     hint.textContent = 'This is what an invoice looks like. Click "+ Add Invoice" to create your own.';
     container.appendChild(hint);
+  }
+
+  // --- Delete confirmation (inline, no modal) ---
+  function showDeleteConfirm(div, inv) {
+    div.innerHTML = '';
+    div.classList.add('confirming');
+
+    const msg = document.createElement('span');
+    msg.textContent = `Delete "${inv.customer}"?`;
+    div.appendChild(msg);
+
+    const actions = document.createElement('div');
+    actions.className = 'invoice-actions';
+
+    const yesBtn = document.createElement('button');
+    yesBtn.className = 'btn-danger';
+    yesBtn.textContent = 'Yes';
+    yesBtn.onclick = () => deleteInvoice(inv.id);
+
+    const noBtn = document.createElement('button');
+    noBtn.className = 'btn-secondary';
+    noBtn.textContent = 'No';
+    noBtn.onclick = () => {
+      const fresh = renderInvoiceRow(inv);
+      div.replaceWith(fresh);
+    };
+
+    actions.appendChild(yesBtn);
+    actions.appendChild(noBtn);
+    div.appendChild(actions);
+  }
+
+  async function deleteInvoice(id) {
+    try {
+      const res = await apiFetch(`/invoices/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Delete failed');
+
+      loadInvoices();
+    } catch (err) {
+      if (err.message !== 'Session expired') {
+        console.error(err);
+        loadInvoices();
+      }
+    }
   }
 
   // --- Payment modal ---
@@ -129,9 +187,8 @@
     submitBtn.textContent = 'Processing...';
 
     try {
-      const res = await fetch('/create-payment-intent', {
+      const res = await apiFetch('/create-payment-intent', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           invoiceId: currentInvoiceId,
           idempotencyKey: currentIdempotencyKey,
@@ -160,7 +217,9 @@
         loadInvoices();
       }, 2000);
     } catch (err) {
-      document.getElementById('card-errors').textContent = err.message;
+      if (err.message !== 'Session expired') {
+        document.getElementById('card-errors').textContent = err.message;
+      }
       submitBtn.disabled = false;
       submitBtn.textContent = 'Pay Now';
     }
@@ -195,19 +254,20 @@
     }
 
     try {
-      const res = await fetch('/invoices', {
+      const res = await apiFetch('/invoices', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ customer, amount }),
       });
 
       const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      if (!res.ok) throw new Error(data.error || 'Create failed');
 
       closeCreateModal();
       loadInvoices();
     } catch (err) {
-      errorDiv.textContent = err.message;
+      if (err.message !== 'Session expired') {
+        errorDiv.textContent = err.message;
+      }
     }
   }
 
@@ -239,4 +299,3 @@
     loadInvoices,
   };
 })();
-
