@@ -6,6 +6,8 @@ const router = express.Router();
 
 router.use(requireAuth);
 
+const SUPPORTED_CURRENCIES = ['usd', 'eur', 'gbp', 'cad', 'aud', 'ngn'];
+
 router.get('/', (req, res) => {
   const invoices = db
     .prepare('SELECT * FROM invoices WHERE user_id = ?')
@@ -15,7 +17,7 @@ router.get('/', (req, res) => {
 
 router.post('/', (req, res) => {
   try {
-    const { customer, amount } = req.body;
+    const { customer, amount, currency } = req.body;
 
     if (!customer || !amount) {
       return res.status(400).send({ error: 'Customer and amount are required' });
@@ -25,11 +27,18 @@ router.post('/', (req, res) => {
       return res.status(400).send({ error: 'Amount must be a positive number' });
     }
 
+    const normalizedCurrency = (currency || 'usd').toLowerCase();
+    if (!SUPPORTED_CURRENCIES.includes(normalizedCurrency)) {
+      return res.status(400).send({
+        error: `Unsupported currency. Choose one of: ${SUPPORTED_CURRENCIES.join(', ')}`,
+      });
+    }
+
     const result = db
       .prepare(
-        'INSERT INTO invoices (customer, amount, paid, user_id) VALUES (?, ?, 0, ?)'
+        'INSERT INTO invoices (customer, amount, paid, user_id, currency) VALUES (?, ?, 0, ?, ?)'
       )
-      .run(customer, amount, req.user.id);
+      .run(customer, amount, req.user.id, normalizedCurrency);
 
     const newInvoice = db
       .prepare('SELECT * FROM invoices WHERE id = ?')
@@ -54,7 +63,6 @@ router.delete('/:id', (req, res) => {
       .prepare('SELECT * FROM invoices WHERE id = ?')
       .get(invoiceId);
 
-    // Same "not found" message for nonexistent OR other users' invoices
     if (!invoice || invoice.user_id !== req.user.id) {
       return res.status(404).send({ error: 'Invoice not found' });
     }

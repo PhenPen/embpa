@@ -83,24 +83,35 @@
       </div>
     </div>
 
-    <!-- Create Invoice Modal -->
-    <div id="create-modal" class="modal-overlay">
-      <div class="modal-box">
-        <h2 style="margin-top:0;">New Invoice</h2>
+<!-- Create Invoice Modal -->
+<div id="create-modal" class="modal-overlay">
+  <div class="modal-box">
+    <h2 style="margin-top:0;">New Invoice</h2>
 
-        <label>Customer Name</label>
-        <input id="new-customer" class="text-input" type="text" placeholder="e.g. Acme Supplies" />
+    <label>Customer Name</label>
+    <input id="new-customer" class="text-input" type="text" placeholder="e.g. Acme Supplies" />
 
-        <label>Amount (USD)</label>
-        <input id="new-amount" class="text-input" type="number" inputmode="decimal" placeholder="e.g. 500" min="1" />
+    <label>Amount</label>
+    <input id="new-amount" class="text-input" type="number" inputmode="decimal" placeholder="e.g. 500" min="1" />
 
-        <div id="create-error" class="form-error"></div>
+    <!-- NEW CURRENCY DROPDOWN -->
+    <label>Currency</label>
+    <select id="new-currency" class="text-input">
+      <option value="usd">USD — US Dollar</option>
+      <option value="eur">EUR — Euro</option>
+      <option value="gbp">GBP — British Pound</option>
+      <option value="cad">CAD — Canadian Dollar</option>
+      <option value="aud">AUD — Australian Dollar</option>
+      <option value="ngn">NGN — Nigerian Naira</option>
+    </select>
 
-        <button id="submit-invoice" style="width: 100%;">Create Invoice</button>
-        <button id="cancel-invoice" class="btn-secondary" style="width: 100%; margin-top: 8px;">Cancel</button>
-      </div>
-    </div>
+    <div id="create-error" class="form-error"></div>
+
+    <button id="submit-invoice" style="width: 100%;">Create Invoice</button>
+    <button id="cancel-invoice" class="btn-secondary" style="width: 100%; margin-top: 8px;">Cancel</button>
   </div>
+</div>
+
 
   <!-- Scripts: order matters -->
   <script src="/js/api.js"></script>

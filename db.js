@@ -34,6 +34,12 @@ if (!invoiceCols.some((c) => c.name === 'user_id')) {
   console.log('Migration: added user_id column.');
 }
 
+// --- Migration: add currency to invoices ---
+if (!invoiceCols.some((c) => c.name === 'currency')) {
+  db.exec("ALTER TABLE invoices ADD COLUMN currency TEXT NOT NULL DEFAULT 'usd'");
+  console.log('Migration: added currency column.');
+}
+
 // --- Migration: remove orphan invoices from the pre-auth era ---
 const orphans = db
   .prepare('SELECT COUNT(*) as c FROM invoices WHERE user_id IS NULL')

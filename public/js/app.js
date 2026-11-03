@@ -55,7 +55,7 @@
     div.className = 'invoice';
 
     const label = document.createElement('span');
-    label.textContent = `${inv.customer} — $${(inv.amount / 1).toFixed(2)}`;
+    label.textContent = `${inv.customer} — ${formatMoney(inv.amount, inv.currency)}`;
     div.appendChild(label);
 
     if (inv.paid) {
@@ -85,12 +85,23 @@
     return div;
   }
 
+  function formatMoney(amount, currency) {
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: 'currency',
+        currency: (currency || 'usd').toUpperCase(),
+      }).format(amount);
+    } catch (err) {
+      return `${(currency || 'usd').toUpperCase()} ${amount}`;
+    }
+  }
+
   function renderSampleInvoice(container) {
     const div = document.createElement('div');
     div.className = 'invoice sample';
 
     const label = document.createElement('span');
-    label.innerHTML = 'Sample Supplies Co. — $1,500.00 <span class="badge">SAMPLE</span>';
+    label.innerHTML = `Sample Supplies Co. — ${formatMoney(1500, 'usd')} <span class="badge">SAMPLE</span>`;
     div.appendChild(label);
 
     const btn = document.createElement('button');
@@ -229,6 +240,7 @@
   function openCreateModal() {
     document.getElementById('new-customer').value = '';
     document.getElementById('new-amount').value = '';
+    document.getElementById('new-currency').value = 'usd';
     document.getElementById('create-error').textContent = '';
     document.getElementById('create-modal').classList.add('open');
   }
@@ -241,6 +253,7 @@
     const customer = document.getElementById('new-customer').value.trim();
     const amountRaw = document.getElementById('new-amount').value;
     const amount = parseInt(amountRaw, 10);
+    const currency = document.getElementById('new-currency').value;
     const errorDiv = document.getElementById('create-error');
     errorDiv.textContent = '';
 
@@ -256,7 +269,7 @@
     try {
       const res = await apiFetch('/invoices', {
         method: 'POST',
-        body: JSON.stringify({ customer, amount }),
+        body: JSON.stringify({ customer, amount, currency }),
       });
 
       const data = await res.json();
@@ -273,9 +286,7 @@
 
   // --- Start app (called after successful auth) ---
   async function start(user) {
-    // FIX: hide the auth screen — was missing after the file split
     document.getElementById('auth-screen').style.display = 'none';
-
     document.getElementById('app-screen').style.display = 'block';
     document.getElementById('user-email').textContent = user.email;
 

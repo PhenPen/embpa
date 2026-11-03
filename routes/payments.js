@@ -53,7 +53,7 @@ router.post('/create-payment-intent', requireAuth, async (req, res) => {
     const paymentIntent = await stripe.paymentIntents.create(
       {
         amount: invoice.amount * 100,
-        currency: 'usd',
+        currency: invoice.currency, // <--- Updated to use database currency
         metadata: { invoiceId: String(invoice.id) },
       },
       stripeOptions
